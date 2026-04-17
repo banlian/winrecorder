@@ -1,0 +1,33 @@
+# Build artifacts
+bin/
+obj/
+
+# User and IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test output
+TestResults/
+*.trx
+*.coverage
+
+# Logs and temporary files
+*.log
+*.tmp
+*.cache
+
+# NuGet
+packages/
+*.nupkg
+
+# Local app/runtime output
+logs/
+artifacts/
+
+# OS files
+Thumbs.db
+Desktop.ini

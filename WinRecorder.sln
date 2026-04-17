@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{469FD0FA-026E-4801-B953-DA89C09F84E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinRecorder", "src\WinRecorder\WinRecorder.csproj", "{DA52EC4C-81A2-4845-B850-1E77EAE4828A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinRecorder.Tests", "src\WinRecorder.Tests\WinRecorder.Tests.csproj", "{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA52EC4C-81A2-4845-B850-1E77EAE4828A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA52EC4C-81A2-4845-B850-1E77EAE4828A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA52EC4C-81A2-4845-B850-1E77EAE4828A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA52EC4C-81A2-4845-B850-1E77EAE4828A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{DA52EC4C-81A2-4845-B850-1E77EAE4828A} = {469FD0FA-026E-4801-B953-DA89C09F84E2}
+		{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B} = {469FD0FA-026E-4801-B953-DA89C09F84E2}
+	EndGlobalSection
+EndGlobal
