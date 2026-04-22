@@ -41,6 +41,7 @@ name: .NET Core Desktop
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
 
@@ -59,15 +60,20 @@ jobs:
                              # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
 
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       SOLUTION_PATH: WinRecorder.sln
       TEST_PROJECT_PATH: src/WinRecorder.Tests/WinRecorder.Tests.csproj
+      NUGET_PACKAGES: ${{ github.workspace }}\.nuget\packages
 
     steps:
     - name: Checkout
       uses: actions/checkout@v5
       with:
         fetch-depth: 0
+
+    - name: Ensure NuGet cache directory exists
+      run: |
+        $ErrorActionPreference = "Stop"
+        New-Item -ItemType Directory -Path "$env:NUGET_PACKAGES" -Force | Out-Null
 
     # Install the .NET Core workload
     - name: Install .NET Core
@@ -103,3 +109,45 @@ jobs:
         dotnet test "$env:TEST_PROJECT_PATH" --configuration "$env:Configuration" --no-build --verbosity normal
       env:
         Configuration: ${{ matrix.configuration }}
+
+    - name: Package release artifact
+      if: startsWith(github.ref, 'refs/tags/') && matrix.configuration == 'Release'
+      run: |
+        $ErrorActionPreference = "Stop"
+        $publishDir = Join-Path $env:GITHUB_WORKSPACE "artifacts/publish"
+        $zipPath = Join-Path $env:GITHUB_WORKSPACE "artifacts/WinRecorder-$env:GITHUB_REF_NAME.zip"
+        New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
+        dotnet publish "$env:SOLUTION_PATH" --configuration "$env:Configuration" --no-build --output "$publishDir"
+        if (Test-Path $zipPath) {
+          Remove-Item $zipPath -Force
+        }
+        Compress-Archive -Path "$publishDir\*" -DestinationPath "$zipPath"
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    - name: Upload release artifact
+      if: startsWith(github.ref, 'refs/tags/') && matrix.configuration == 'Release'
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-asset
+        path: artifacts/*.zip
+        if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-asset
+          path: release-assets
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*.zip
+          generate_release_notes: true
