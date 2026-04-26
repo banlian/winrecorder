@@ -30,6 +30,7 @@ public sealed class AppContext : ApplicationContext, IDisposable
 
     private readonly KeyboardTextTranslator _keyboardTextTranslator;
     private readonly MouseTargetResolver _mouseTargetResolver;
+    private readonly EventDeduplicator _eventDeduplicator = new();
 
     private volatile bool _paused;
     private readonly TrayIconController _tray;
@@ -203,6 +204,9 @@ public sealed class AppContext : ApplicationContext, IDisposable
 
             var enriched = Enrich(raw);
             if (enriched == null)
+                return;
+
+            if (!_eventDeduplicator.ShouldEmit(enriched))
                 return;
 
             // Best-effort enqueue; bounded channel may drop.

@@ -9,7 +9,8 @@ internal static class UnitTest1
         try
         {
             EntryFormatterTests.RunAll();
-            Console.WriteLine("EntryFormatterTests: OK");
+            EventDeduplicatorTests.RunAll();
+            Console.WriteLine("EntryFormatterTests + EventDeduplicatorTests: OK");
             return 0;
         }
         catch (Exception ex)
