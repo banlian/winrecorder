@@ -39,7 +39,11 @@ public sealed class TrayIconController : IDisposable
         openLogsItem.Click += (_, __) => OpenLogDir();
         menu.Items.Add(openLogsItem);
 
-        var openSettingsItem = new ToolStripMenuItem("打开 settings.json");
+        var openTodayRecordItem = new ToolStripMenuItem("打开今日记录文件.md");
+        openTodayRecordItem.Click += (_, __) => OpenTodayRecordFile();
+        menu.Items.Add(openTodayRecordItem);
+
+        var openSettingsItem = new ToolStripMenuItem("打开设置 settings.json");
         openSettingsItem.Click += (_, __) => OpenSettingsFile();
         menu.Items.Add(openSettingsItem);
 
@@ -79,17 +83,58 @@ public sealed class TrayIconController : IDisposable
     {
         try
         {
-            var settingsPath = SettingsLoader.GetSettingsPath();
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = settingsPath,
-                UseShellExecute = true
-            });
+            using var form = new SettingsEditorForm();
+            form.ShowDialog();
         }
         catch
         {
             // Best-effort.
         }
+    }
+
+    private void OpenTodayRecordFile()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_logDir))
+                return;
+
+            Directory.CreateDirectory(_logDir);
+            var todayPath = Path.Combine(_logDir, $"{DateTime.Today:yyyy-MM-dd}.md");
+            if (!File.Exists(todayPath))
+                File.WriteAllText(todayPath, $"# {DateTime.Today:yyyy-MM-dd} WinRecorder Log{Environment.NewLine}");
+
+            OpenFileInPreferredEditor(todayPath);
+        }
+        catch
+        {
+            // Best-effort.
+        }
+    }
+
+    private static void OpenFileInPreferredEditor(string filePath)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "notepad++",
+                Arguments = $"\"{filePath}\"",
+                UseShellExecute = true
+            });
+            return;
+        }
+        catch
+        {
+            // Fall back to notepad.
+        }
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "notepad",
+            Arguments = $"\"{filePath}\"",
+            UseShellExecute = true
+        });
     }
 
     public void Dispose()

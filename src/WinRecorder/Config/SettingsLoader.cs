@@ -4,6 +4,9 @@ namespace WinRecorder.Config;
 
 public static class SettingsLoader
 {
+    private static readonly JsonSerializerOptions JsonWriteOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions JsonReadOptions = new() { PropertyNameCaseInsensitive = true };
+
     public static string GetSettingsPath()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -20,20 +23,30 @@ public static class SettingsLoader
         if (!File.Exists(settingsPath))
         {
             var defaults = CreateDefaultSettings();
-            var json = JsonSerializer.Serialize(defaults, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(settingsPath, json);
-            EnsureLogDirExists(defaults.LogDir);
+            Save(defaults);
             return defaults;
         }
 
         var text = File.ReadAllText(settingsPath);
-        var settings = JsonSerializer.Deserialize<AppSettings>(text, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        }) ?? CreateDefaultSettings();
+        var settings = JsonSerializer.Deserialize<AppSettings>(text, JsonReadOptions) ?? CreateDefaultSettings();
 
         EnsureLogDirExists(settings.LogDir);
         return settings;
+    }
+
+    public static void Save(AppSettings settings)
+    {
+        if (settings == null)
+            throw new ArgumentNullException(nameof(settings));
+
+        var settingsPath = GetSettingsPath();
+        var settingsDir = Path.GetDirectoryName(settingsPath);
+        if (!string.IsNullOrWhiteSpace(settingsDir))
+            Directory.CreateDirectory(settingsDir);
+
+        var json = JsonSerializer.Serialize(settings, JsonWriteOptions);
+        File.WriteAllText(settingsPath, json);
+        EnsureLogDirExists(settings.LogDir);
     }
 
     private static void EnsureLogDirExists(string logDir)
