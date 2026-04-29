@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Threading;
+using Microsoft.Win32;
 using System.Windows.Forms;
 using WinRecorder.Config;
 using WinRecorder.Hooks;
@@ -87,6 +88,7 @@ public sealed class AppContext : ApplicationContext, IDisposable
         _tray.ExitRequested += () => ExitThreadSafe();
 
         _tray.SetPaused(_paused);
+        RegisterSystemSessionEvents();
 
         // Start hooks after the UI message loop exists.
         // In WinForms, Application.Run creates the loop, so hooking immediately is usually fine.
@@ -156,6 +158,48 @@ public sealed class AppContext : ApplicationContext, IDisposable
         }
     }
 
+    private void RegisterSystemSessionEvents()
+    {
+        try
+        {
+            SystemEvents.SessionSwitch += OnSessionSwitch;
+        }
+        catch (Exception ex)
+        {
+            ErrorLog.Write("SystemEvents.SessionSwitch subscribe", ex);
+        }
+    }
+
+    private void OnSessionSwitch(object? sender, SessionSwitchEventArgs e)
+    {
+        try
+        {
+            string? eventCode = e.Reason switch
+            {
+                SessionSwitchReason.SessionLogon => "system:login",
+                SessionSwitchReason.SessionLogoff => "system:logout",
+                _ => null
+            };
+
+            if (eventCode == null)
+                return;
+
+            var ev = new UiEvent(
+                timestamp: DateTimeOffset.Now,
+                type: UiEventType.ForegroundChanged,
+                processName: "System",
+                windowTitle: "Session",
+                eventCode: eventCode,
+                details: $"reason={e.Reason}");
+
+            _channel.Writer.TryWrite(ev);
+        }
+        catch (Exception ex)
+        {
+            ErrorLog.Write("SystemEvents.SessionSwitch handler", ex);
+        }
+    }
+
     private void TogglePause()
     {
         _paused = !_paused;
@@ -208,6 +252,13 @@ public sealed class AppContext : ApplicationContext, IDisposable
 
             if (!_eventDeduplicator.ShouldEmit(enriched))
                 return;
+
+            if (raw.Type == UiEventType.ForegroundChanged)
+            {
+                var dwellEvent = TryBuildWindowDwellEvent(raw);
+                if (dwellEvent != null && _eventDeduplicator.ShouldEmit(dwellEvent))
+                    _channel.Writer.TryWrite(dwellEvent);
+            }
 
             // Best-effort enqueue; bounded channel may drop.
             _channel.Writer.TryWrite(enriched);
@@ -542,6 +593,33 @@ public sealed class AppContext : ApplicationContext, IDisposable
             .Replace("\"", "\\\"");
     }
 
+    private UiEvent? TryBuildWindowDwellEvent(UiEvent nextForegroundEvent)
+    {
+        var previousProcess = _lastForegroundProcess;
+        var previousTitle = _lastForegroundTitle;
+        var previousTimestamp = _lastForegroundEmitTs;
+        if (string.IsNullOrWhiteSpace(previousTitle) || previousTimestamp == DateTimeOffset.MinValue)
+            return null;
+
+        // Only emit dwell when an actual window switch occurs.
+        if (string.Equals(previousProcess, nextForegroundEvent.ProcessName, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(previousTitle, nextForegroundEvent.WindowTitle, StringComparison.Ordinal))
+            return null;
+
+        var duration = nextForegroundEvent.Timestamp - previousTimestamp;
+        if (duration.TotalMilliseconds < 0)
+            return null;
+
+        var durationText = $"{duration:hh\\:mm\\:ss\\.fff}";
+        return new UiEvent(
+            timestamp: nextForegroundEvent.Timestamp,
+            type: UiEventType.ForegroundChanged,
+            processName: previousProcess,
+            windowTitle: previousTitle,
+            eventCode: "window:dwell",
+            details: $"duration={durationText}");
+    }
+
     protected override void Dispose(bool disposing)
     {
         try
@@ -572,6 +650,7 @@ public sealed class AppContext : ApplicationContext, IDisposable
         try { _foregroundHook.Stop(); } catch { }
         try { _mouseHook.Stop(); } catch { }
         try { _keyboardHook.Stop(); } catch { }
+        try { SystemEvents.SessionSwitch -= OnSessionSwitch; } catch { }
 
         try { _channel.Writer.TryComplete(); } catch { }
 
