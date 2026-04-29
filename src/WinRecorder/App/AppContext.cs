@@ -22,6 +22,8 @@ public sealed class AppContext : ApplicationContext, IDisposable
 
     private readonly Task _writerTask;
     private int _cleanupDone;
+    private int _startupLogged;
+    private int _shutdownLogged;
     private readonly object _lastWindowGate = new();
     private WindowInfo? _lastWindowInfo;
 
@@ -75,6 +77,7 @@ public sealed class AppContext : ApplicationContext, IDisposable
         });
 
         _writerTask = Task.Run(() => WriterLoopAsync(_cts.Token));
+        LogLifecycleEventOnce(ref _startupLogged, "app:start", "reason=startup");
 
         _keyboardTextTranslator = new KeyboardTextTranslator();
         _mouseTargetResolver = new MouseTargetResolver();
@@ -246,6 +249,10 @@ public sealed class AppContext : ApplicationContext, IDisposable
             if (!TryAllowEventByRateLimit())
                 return;
 
+            UiEvent? dwellEvent = null;
+            if (raw.Type == UiEventType.ForegroundChanged)
+                dwellEvent = TryBuildWindowDwellEvent(raw);
+
             var enriched = Enrich(raw);
             if (enriched == null)
                 return;
@@ -253,12 +260,8 @@ public sealed class AppContext : ApplicationContext, IDisposable
             if (!_eventDeduplicator.ShouldEmit(enriched))
                 return;
 
-            if (raw.Type == UiEventType.ForegroundChanged)
-            {
-                var dwellEvent = TryBuildWindowDwellEvent(raw);
-                if (dwellEvent != null && _eventDeduplicator.ShouldEmit(dwellEvent))
-                    _channel.Writer.TryWrite(dwellEvent);
-            }
+            if (dwellEvent != null && _eventDeduplicator.ShouldEmit(dwellEvent))
+                _channel.Writer.TryWrite(dwellEvent);
 
             // Best-effort enqueue; bounded channel may drop.
             _channel.Writer.TryWrite(enriched);
@@ -643,6 +646,7 @@ public sealed class AppContext : ApplicationContext, IDisposable
         if (Interlocked.Exchange(ref _cleanupDone, 1) != 0)
             return;
 
+        LogLifecycleEventOnce(ref _shutdownLogged, "app:stop", "reason=shutdown");
         try { _paused = true; } catch { }
 
         try { _tray.Dispose(); } catch { }
@@ -657,6 +661,28 @@ public sealed class AppContext : ApplicationContext, IDisposable
         try { _cts.Cancel(); } catch { }
 
         try { _writerTask.Wait(TimeSpan.FromSeconds(5)); } catch { }
+    }
+
+    private void LogLifecycleEventOnce(ref int flag, string eventCode, string details)
+    {
+        if (Interlocked.Exchange(ref flag, 1) != 0)
+            return;
+
+        try
+        {
+            var ev = new UiEvent(
+                timestamp: DateTimeOffset.Now,
+                type: UiEventType.ForegroundChanged,
+                processName: "WinRecorder",
+                windowTitle: "Lifecycle",
+                eventCode: eventCode,
+                details: details);
+            _channel.Writer.TryWrite(ev);
+        }
+        catch
+        {
+            // Best-effort.
+        }
     }
 }
 
