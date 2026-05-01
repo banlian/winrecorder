@@ -7,6 +7,20 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <!-- dotnet build -p:LaunchAfterBuild=true runs run-after-build.ps1 after a successful build -->
+    <LaunchAfterBuild Condition="'$(LaunchAfterBuild)' == ''">false</LaunchAfterBuild>
   </PropertyGroup>
+
+  <!-- Post-build launcher: avoids embedding Start-Process in XML -->
+  <Target Name="LaunchAfterBuild" AfterTargets="Build"
+          Condition="'$(LaunchAfterBuild)' == 'true'">
+    <Exec Command='powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\run-after-build.ps1&quot; -ExePath &quot;$(TargetDir)$(TargetFileName)&quot;' />
+  </Target>
+
+  <ItemGroup>
+    <Content Include="Server\log-stats.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
 </Project>

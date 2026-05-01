@@ -9,6 +9,7 @@ using WinRecorder.Config;
 using WinRecorder.Hooks;
 using WinRecorder.Logging;
 using WinRecorder.Models;
+using WinRecorder.Server;
 using WinRecorder.Services;
 
 namespace WinRecorder.App;
@@ -37,6 +38,7 @@ public sealed class AppContext : ApplicationContext, IDisposable
 
     private volatile bool _paused;
     private readonly TrayIconController _tray;
+    private readonly LogStatsServer _statsServer;
 
     /// <summary>
     /// WinForms expects a MainForm for a stable message loop. Tray-only contexts without a form
@@ -86,9 +88,14 @@ public sealed class AppContext : ApplicationContext, IDisposable
         _mouseHook = new MouseHook(onEvent: HandleHookEvent, targetResolver: _mouseTargetResolver);
         _keyboardHook = new KeyboardHook(onEvent: HandleHookEvent, translator: _keyboardTextTranslator, captureKeysText: _settings.CaptureKeysText);
 
+        _statsServer = new LogStatsServer(_settings.LogDir);
+        _statsServer.Start();
+
         _tray = new TrayIconController(_settings);
         _tray.PauseToggled += () => TogglePause();
         _tray.ExitRequested += () => ExitThreadSafe();
+        _tray.OpenStatsRequested += () => _statsServer.OpenBrowser();
+        _tray.OpenServicePageRequested += () => _statsServer.OpenServicePage();
 
         _tray.SetPaused(_paused);
         RegisterSystemSessionEvents();
@@ -650,6 +657,7 @@ public sealed class AppContext : ApplicationContext, IDisposable
         try { _paused = true; } catch { }
 
         try { _tray.Dispose(); } catch { }
+        try { _statsServer.Dispose(); } catch { }
 
         try { _foregroundHook.Stop(); } catch { }
         try { _mouseHook.Stop(); } catch { }

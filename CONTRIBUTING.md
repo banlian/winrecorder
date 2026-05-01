@@ -15,8 +15,11 @@ Thanks for your interest in improving WinRecorder.
 ```powershell
 dotnet restore .\src\WinRecorder\WinRecorder.csproj
 dotnet build .\src\WinRecorder\WinRecorder.csproj
-dotnet test .\src\WinRecorder.Tests\WinRecorder.Tests.csproj
+dotnet run --project .\src\WinRecorder.Tests\WinRecorder.Tests.csproj
 ```
+
+The `WinRecorder.Tests` project is a self-test **console** host (not a VSTest project). Use `dotnet run`, not `dotnet test`.
+`WinRecorder.Tests` 为自测控制台工程，请使用 `dotnet run` 而非 `dotnet test`。
 
 ## Pull Request Guidelines
 

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WinRecorder Log Stats</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background: #f7f8fa; color: #1f2937; }
+    h1 { margin-top: 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+    .big { font-size: 28px; font-weight: 700; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    th { background: #f3f4f6; }
+    .bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .bar { height: 12px; background: #3b82f6; border-radius: 4px; min-width: 2px; }
+    .muted { color: #6b7280; font-size: 12px; }
+    .row { display: flex; gap: 8px; margin-bottom: 12px; }
+    input { flex: 1; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+    button { padding: 8px 12px; border: 0; background: #2563eb; color: #fff; border-radius: 6px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>WinRecorder Log Statistics</h1>
+  <div class="row">
+    <button id="prevDay" title="Previous day">&lt;</button>
+    <input id="logDate" type="date" style="max-width: 180px;" />
+    <button id="nextDay" title="Next day">&gt;</button>
+    <button id="today" title="Back to today">Today</button>
+    <button id="reload">Reload</button>
+  </div>
+  <div class="muted" id="meta"></div>
+  <div class="grid" id="summary"></div>
+
+  <h3>Top Apps</h3>
+  <table>
+    <thead><tr><th>App</th><th>Count</th></tr></thead>
+    <tbody id="apps"></tbody>
+  </table>
+
+  <h3 style="margin-top:16px;">Events By Hour</h3>
+  <table>
+    <thead><tr><th>Hour</th><th>Events</th><th>Bar</th></tr></thead>
+    <tbody id="hours"></tbody>
+  </table>
+
+  <script>
+    const defaultDate = new URLSearchParams(location.search).get('date') || '';
+    const dateInput = document.getElementById('logDate');
+    dateInput.value = defaultDate || new Date().toISOString().slice(0, 10);
+
+    function shiftDate(days) {
+      const current = dateInput.value ? new Date(dateInput.value + 'T00:00:00') : new Date();
+      current.setDate(current.getDate() + days);
+      dateInput.value = current.toISOString().slice(0, 10);
+    }
+
+    function card(title, value) {
+      return `<div class="card"><div>${title}</div><div class="big">${value}</div></div>`;
+    }
+
+    function render(data) {
+      document.getElementById('meta').textContent = `Date: ${data.selectedDate} | File: ${data.file} | Generated: ${data.generatedAt}`;
+      if (data.selectedDate) {
+        dateInput.value = data.selectedDate;
+      }
+      const types = data.eventTypes;
+      document.getElementById('summary').innerHTML = [
+        card('Total Events', data.totalEvents),
+        card('Foreground', types.foreground ?? 0),
+        card('Mouse', types.mouse ?? 0),
+        card('Key', types.key ?? 0),
+        card('Dwell', types.dwell ?? 0),
+        card('Lifecycle', types.lifecycle ?? 0),
+        card('Input Text', types.input ?? 0),
+        card('Other', types.other ?? 0)
+      ].join('');
+
+      document.getElementById('apps').innerHTML = data.topApps
+        .map(x => `<tr><td>${x.name}</td><td>${x.count}</td></tr>`)
+        .join('');
+
+      const max = Math.max(...data.hourly.map(x => x.count), 1);
+      document.getElementById('hours').innerHTML = data.hourly
+        .map(x => {
+          const w = Math.round((x.count / max) * 220);
+          return `<tr><td>${x.hour}:00</td><td>${x.count}</td><td><div class="bar-wrap"><div class="bar" style="width:${w}px"></div></div></td></tr>`;
+        })
+        .join('');
+    }
+
+    async function load() {
+      const date = dateInput.value.trim();
+      const query = new URLSearchParams();
+      if (date) query.set('date', date);
+      const resp = await fetch('/api/stats?' + query.toString());
+      if (!resp.ok) {
+        const err = await resp.text();
+        alert(err);
+        return;
+      }
+      render(await resp.json());
+    }
+
+    document.getElementById('reload').addEventListener('click', load);
+    document.getElementById('prevDay').addEventListener('click', () => { shiftDate(-1); load(); });
+    document.getElementById('nextDay').addEventListener('click', () => { shiftDate(1); load(); });
+    document.getElementById('today').addEventListener('click', () => { dateInput.value = new Date().toISOString().slice(0, 10); load(); });
+    dateInput.addEventListener('change', load);
+    load();
+  </script>
+</body>
+</html>

@@ -9,6 +9,8 @@ public sealed class TrayIconController : IDisposable
 {
     public event Action? PauseToggled;
     public event Action? ExitRequested;
+    public event Action? OpenStatsRequested;
+    public event Action? OpenServicePageRequested;
 
     private readonly NotifyIcon _notifyIcon;
     private readonly Icon _activeIcon;
@@ -42,6 +44,14 @@ public sealed class TrayIconController : IDisposable
         var openTodayRecordItem = new ToolStripMenuItem("打开今日记录文件.md");
         openTodayRecordItem.Click += (_, __) => OpenTodayRecordFile();
         menu.Items.Add(openTodayRecordItem);
+
+        var openStatsItem = new ToolStripMenuItem("打开统计页面（今日日志）");
+        openStatsItem.Click += (_, __) => OpenStatsRequested?.Invoke();
+        menu.Items.Add(openStatsItem);
+
+        var openServicePageItem = new ToolStripMenuItem("打开服务首页");
+        openServicePageItem.Click += (_, __) => OpenServicePageRequested?.Invoke();
+        menu.Items.Add(openServicePageItem);
 
         var openSettingsItem = new ToolStripMenuItem("打开设置 settings.json");
         openSettingsItem.Click += (_, __) => OpenSettingsFile();
