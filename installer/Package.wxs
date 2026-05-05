@@ -1,7 +1,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="WinRecorder"
            Language="1033"
-           Version="1.0.0.0"
+           Version="1.0.2.0"
            Manufacturer="Banlian"
            UpgradeCode="e8a0b9c1-d2e3-4f5a-8b6c-7d8e9f0a1b2c"
            Scope="perMachine"

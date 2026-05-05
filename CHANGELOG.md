@@ -6,6 +6,8 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-05-01
+
 ### Added
 
 - Embedded **log statistics** HTTP server: parse daily markdown logs, serve `/api/stats` (JSON) and a bundled `log-stats.html` UI; tray/menu wiring; ship HTML with the app (`LogStatsServer`, `Server/log-stats.html`).
