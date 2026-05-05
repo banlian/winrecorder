@@ -61,6 +61,8 @@ jobs:
 
     env:
       SOLUTION_PATH: WinRecorder.sln
+      APP_PROJECT_PATH: src/WinRecorder/WinRecorder.csproj
+      INSTALLER_PROJECT_PATH: installer/WinRecorder.Installer.wixproj
       TEST_PROJECT_PATH: src/WinRecorder.Tests/WinRecorder.Tests.csproj
       NUGET_PACKAGES: ${{ github.workspace }}\.nuget\packages
 
@@ -116,12 +118,19 @@ jobs:
         $ErrorActionPreference = "Stop"
         $publishDir = Join-Path $env:GITHUB_WORKSPACE "artifacts/publish"
         $zipPath = Join-Path $env:GITHUB_WORKSPACE "artifacts/WinRecorder-$env:GITHUB_REF_NAME.zip"
+        $msiPath = Join-Path $env:GITHUB_WORKSPACE "artifacts/WinRecorder-$env:GITHUB_REF_NAME.msi"
         New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
-        dotnet publish "$env:SOLUTION_PATH" --configuration "$env:Configuration" --no-build --output "$publishDir"
+        dotnet publish "$env:GITHUB_WORKSPACE/$env:APP_PROJECT_PATH" --configuration "$env:Configuration" -r win-x64 --self-contained false --output "$publishDir"
         if (Test-Path $zipPath) {
           Remove-Item $zipPath -Force
         }
         Compress-Archive -Path "$publishDir\*" -DestinationPath "$zipPath"
+        $publishFull = (Resolve-Path -LiteralPath $publishDir).Path
+        if (-not $publishFull.EndsWith('\')) { $publishFull += '\' }
+        dotnet build "$env:GITHUB_WORKSPACE/$env:INSTALLER_PROJECT_PATH" --configuration "$env:Configuration" /p:AppPublishDir="$publishFull"
+        $msiSrc = Get-ChildItem -Path (Join-Path $env:GITHUB_WORKSPACE "installer/bin") -Recurse -Filter "WinRecorder.Installer.msi" -ErrorAction Stop |
+          Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        Copy-Item -LiteralPath $msiSrc.FullName -Destination $msiPath -Force
       env:
         Configuration: ${{ matrix.configuration }}
 
@@ -130,7 +139,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: release-asset
-        path: artifacts/*.zip
+        path: |
+          artifacts/*.zip
+          artifacts/*.msi
         if-no-files-found: error
 
   release:
@@ -149,5 +160,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-assets/*.zip
+          files: |
+            release-assets/*.zip
+            release-assets/*.msi
           generate_release_notes: true

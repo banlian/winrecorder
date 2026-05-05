@@ -1,0 +1,32 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="WinRecorder"
+           Language="1033"
+           Version="1.0.0.0"
+           Manufacturer="Banlian"
+           UpgradeCode="e8a0b9c1-d2e3-4f5a-8b6c-7d8e9f0a1b2c"
+           Scope="perMachine"
+           InstallerVersion="500">
+    <SummaryInformation Description="WinRecorder Windows activity logger" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="Main" Title="WinRecorder" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLROOT" Name="Banlian">
+        <Directory Id="INSTALLFOLDER" Name="WinRecorder" />
+      </Directory>
+    </StandardDirectory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Files Include="!(bindpath.AppPublish)\**" />
+    </ComponentGroup>
+  </Fragment>
+</Wix>

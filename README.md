@@ -47,6 +47,16 @@ Add screenshots in `docs/assets/` and link them here, for example:
 dotnet build .\src\WinRecorder\WinRecorder.csproj
 ```
 
+### MSI installer (WiX)
+
+After `dotnet publish` (the script runs publish for you), build `WinRecorder.Installer.msi`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\installer\build-msi.ps1
+```
+
+Add `-SelfContained` to bundle the .NET runtime (larger MSI). The script prints the full path to `WinRecorder.Installer.msi` (under `installer\bin\`, exact subfolders depend on MSBuild platform settings).
+
 ### Run
 
 ```powershell

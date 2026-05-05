@@ -1,0 +1,16 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <Platforms>x64</Platforms>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <ProductName>WinRecorder</ProductName>
+    <!-- Absolute path to a `dotnet publish` output folder (see build-msi.ps1). -->
+    <AppPublishDir Condition="'$(AppPublishDir)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\artifacts\publish\'))</AppPublishDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <BindPath Include="$(AppPublishDir)" BindName="AppPublish" />
+  </ItemGroup>
+
+</Project>

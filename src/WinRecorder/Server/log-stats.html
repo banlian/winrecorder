@@ -48,12 +48,27 @@
   <script>
     const defaultDate = new URLSearchParams(location.search).get('date') || '';
     const dateInput = document.getElementById('logDate');
-    dateInput.value = defaultDate || new Date().toISOString().slice(0, 10);
+
+    /** YYYY-MM-DD in local calendar (avoid toISOString() which is UTC and breaks day +/-). */
+    function formatDateLocal(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function parseDateInputLocal(value) {
+      const parts = value.trim().split('-').map(Number);
+      if (parts.length !== 3 || parts.some(n => Number.isNaN(n))) return new Date();
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    dateInput.value = defaultDate || formatDateLocal(new Date());
 
     function shiftDate(days) {
-      const current = dateInput.value ? new Date(dateInput.value + 'T00:00:00') : new Date();
+      const current = dateInput.value ? parseDateInputLocal(dateInput.value) : new Date();
       current.setDate(current.getDate() + days);
-      dateInput.value = current.toISOString().slice(0, 10);
+      dateInput.value = formatDateLocal(current);
     }
 
     function card(title, value) {
@@ -106,7 +121,7 @@
     document.getElementById('reload').addEventListener('click', load);
     document.getElementById('prevDay').addEventListener('click', () => { shiftDate(-1); load(); });
     document.getElementById('nextDay').addEventListener('click', () => { shiftDate(1); load(); });
-    document.getElementById('today').addEventListener('click', () => { dateInput.value = new Date().toISOString().slice(0, 10); load(); });
+    document.getElementById('today').addEventListener('click', () => { dateInput.value = formatDateLocal(new Date()); load(); });
     dateInput.addEventListener('change', load);
     load();
   </script>

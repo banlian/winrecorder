@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinRecorder", "src\WinRecor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinRecorder.Tests", "src\WinRecorder.Tests\WinRecorder.Tests.csproj", "{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B}"
 EndProject
+Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "WinRecorder.Installer", "installer\WinRecorder.Installer.wixproj", "{5AA38FCB-659A-403F-A90B-6AD6C23D8D39}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,8 @@ Global
 		{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ACF1A370-DC16-42FB-8DCC-02B99B3D1D9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AA38FCB-659A-403F-A90B-6AD6C23D8D39}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{5AA38FCB-659A-403F-A90B-6AD6C23D8D39}.Release|Any CPU.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{DA52EC4C-81A2-4845-B850-1E77EAE4828A} = {469FD0FA-026E-4801-B953-DA89C09F84E2}
